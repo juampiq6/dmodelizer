@@ -66,8 +66,7 @@ class _HomeState extends State<Home> {
                     color: Colors.amber,
                     child: ModelConverter.resultingClasses.isEmpty
                         ? Text(validationResult)
-                        : ClassesResultListView(
-                            classes: ModelConverter.resultingClasses.toList()),
+                        : ClassesResultListView(),
                   ))
                 ],
               ),

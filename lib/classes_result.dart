@@ -3,7 +3,7 @@ import 'package:dmodelizer/model_converter.dart';
 import 'package:flutter/material.dart';
 
 class ClassesResultListView extends StatelessWidget {
-  final Set<Class> classes = ModelConverter.resultingClasses;
+  final List<Class> classes = ModelConverter.resultingClasses.toList();
 
   @override
   Widget build(BuildContext context) {

@@ -1,7 +1,8 @@
 import 'package:dmodelizer/meta_models/class.dart';
 
+const supportedTypes = <Type>{String, bool, int, double, List, DateTime };
 class ClassAttribute {
-  final Type type;
+  Type type;
   final String name;
 
   bool get isComplex => type == Class;
@@ -9,11 +10,11 @@ class ClassAttribute {
   ClassAttribute.primitive(this.type, this.name)
       : assert(type == bool || type == String || type == int || type == double);
 
-  ClassAttribute.dateTime(this.type, this.name)
-      : assert(type == DateTime);
-
-  ClassAttribute.collection(this.type, this.name)
+  ClassAttribute.collection(this.type,this.name)
       : assert(type == List);
+      
+  ClassAttribute.dateTime(this.name)
+      : this.type = DateTime;
 
   ClassAttribute.model(this.name)
       : this.type = Class;

@@ -32,7 +32,7 @@ class JsonEditor extends StatelessWidget {
               enableInteractiveSelection: true,
               decoration: InputDecoration(
                   border: InputBorder.none,
-                  hintText: "Paste or write json here"),
+                  hintText: "Paste or write source JSON here"),
             ),
           ),
         ),

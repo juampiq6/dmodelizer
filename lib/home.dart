@@ -2,29 +2,18 @@ import 'dart:convert';
 
 import 'package:dmodelizer/json_editor.dart';
 import 'package:dmodelizer/meta_models/class.dart';
-import 'package:dmodelizer/model_converter.dart';
+import 'package:dmodelizer/providers/model_converter_prov.dart';
+import 'package:dmodelizer/providers/providers_declaration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'classes_result.dart';
 
 const encoder = const JsonEncoder.withIndent("  ");
 
-class Home extends StatefulWidget {
-  @override
-  _HomeState createState() => _HomeState();
-}
-
-class _HomeState extends State<Home> {
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  bool buttonEnabled = false;
+class Home extends StatelessWidget {
   final jsonEditorController = TextEditingController();
   final classNameController = TextEditingController();
-
-  String validationResult = "Press button to validate";
 
   @override
   Widget build(BuildContext context) {
@@ -46,27 +35,26 @@ class _HomeState extends State<Home> {
                 mainAxisSize: MainAxisSize.max,
                 children: [
                   Expanded(
-                    child: JsonEditor(
-                      nameController: classNameController,
-                      editorController: jsonEditorController,
-                      onChanged: (value) {
-                        if (value != "" && !buttonEnabled)
-                          setState(() {
-                            buttonEnabled = true;
-                          });
-                        else if (value == "" && buttonEnabled)
-                          setState(() {
-                            buttonEnabled = false;
-                          });
+                    child: Consumer(
+                      builder: (_, watch, child) {
+                        final prov = watch(modelConverterProvider);
+                        return JsonEditor(
+                          nameController: classNameController,
+                          editorController: jsonEditorController,
+                          onChanged: (value) {
+                            if (value != "" && !prov.validateButtonEnabled)
+                              prov.validateButtonEnabled = true;
+                            else if (value == "" && prov.validateButtonEnabled)
+                              prov.validateButtonEnabled = false;
+                          },
+                        );
                       },
                     ),
                   ),
                   Expanded(
                       child: Container(
                     color: Colors.amber,
-                    child: ModelConverter.resultingClasses.isEmpty
-                        ? Text(validationResult)
-                        : ClassesResultListView(),
+                    child: ClassesResultListView(),
                   ))
                 ],
               ),
@@ -74,39 +62,77 @@ class _HomeState extends State<Home> {
           ),
           Expanded(
             flex: 1,
-            child: Container(
-              child: MaterialButton(
-                color: Colors.green,
-                child: Text("Validar"),
-                onPressed: buttonEnabled ? validateJson : null,
-              ),
-            ),
+            child: Consumer(builder: (_, watch, child) {
+              final prov = watch(modelConverterProvider);
+              return Row(
+                children: [
+                  Container(
+                    child: MaterialButton(
+                      color: Colors.green,
+                      child: Text("Validar"),
+                      onPressed: prov.validateButtonEnabled
+                          ? () {
+                              jsonEditorController.text = prov.validateJson(
+                                  jsonEditorController.text,
+                                  classNameController.text);
+                            }
+                          : null,
+                    ),
+                  ),
+                  Container(
+                    child: MaterialButton(
+                      color: Colors.green,
+                      child: Text("Generar código Dart"),
+                      onPressed:
+                          prov.validateButtonEnabled && !prov.validationError
+                              ? () {
+                                  showGeneratedCode(context);
+                                }
+                              : null,
+                    ),
+                  ),
+                ],
+              );
+            }),
           ),
         ],
       ),
     );
   }
 
-  validateJson() {
-    String res;
-    try {
-      dynamic jsonObj = json.decode(jsonEditorController.text);
-      final finalText = encoder.convert(jsonObj);
-      jsonEditorController.text = finalText;
-      ModelConverter.parseJson(
-          jsonObj,
-          classNameController.text != ""
-              ? classNameController.text
-              : "ClassName");
-      res = ModelConverter.resultingClasses
-          .fold<String>("", (value, element) => value + element.toString());
-    } catch (e) {
-      print(e);
-      res = "Validation error: \n" + e.toString();
-    } finally {
-      setState(() {
-        validationResult = res;
-      });
-    }
+  void showGeneratedCode(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (ctx) {
+          return Dialog(
+            child: Scaffold(
+                          body: Container(
+                child: Consumer(
+                  builder: (_, watch, child) {
+                    final prov = watch(modelConverterProvider);
+                    return DefaultTabController(
+                      length: prov.resultingClasses.length,
+                      child: Column(
+                        children: [
+                          TabBar(
+                              tabs: prov.resultingClasses
+                                  .map((e) => Tab(text: e.name))
+                                  .toList()),
+                          Expanded(
+                                                      child: TabBarView(
+                              children: prov.resultingClasses
+                                  .map((e) => Text(e.toCode()))
+                                  .toList(),
+                            ),
+                          )
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        });
   }
 }

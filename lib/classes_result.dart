@@ -1,14 +1,19 @@
 import 'package:dmodelizer/meta_models/class.dart';
-import 'package:dmodelizer/model_converter.dart';
+import 'package:dmodelizer/providers/model_converter_prov.dart';
+import 'package:dmodelizer/providers/providers_declaration.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ClassesResultListView extends StatelessWidget {
-  final List<Class> classes = ModelConverter.resultingClasses.toList();
+import 'type_selector.dart';
+
+class ClassesResultListView extends ConsumerWidget {
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ScopedReader watch) {
+    final prov = watch(modelConverterProvider);
+    final List<Class> classes = prov.resultingClasses.toList();
     
-    return ListView.separated(
+    return classes.isEmpty ? Text(prov.validationResult) : ListView.separated(
       itemCount: classes.length,
       itemBuilder: (_, i) => ExpansionTile(
         childrenPadding: EdgeInsets.all(20),
@@ -16,10 +21,11 @@ class ClassesResultListView extends StatelessWidget {
         children: classes[i]
             .attributes
             .map((a) => Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 Text(a.name),
-                Text(a.type.toString())
+                SizedBox(width: 15,),
+                TypeSelector(a)
               ],
             ))
             .toList(),
